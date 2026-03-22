@@ -10,32 +10,29 @@ This repository contains the **dashboard** only. Match and news data come from a
 
 - **Web UI** at `http://localhost:8000` for configuration and monitoring.
 - **Modules** (toggle and order in `config.json`): recent results and upcoming matches, live match ticker, Twitch live alerts, countdowns, weather (Open-Meteo), Reddit posts, VLR news, word of the day, pinned text, timers.
-- **AWTRIX HTTP API client** to send apps to a physical device, or a **mock AWTRIX server** for development without hardware.
+- **AWTRIX HTTP API client** to send apps to a physical device on your network.
 
 ---
 
 ## Architecture
 
-Three processes are normally running:
+Two processes are normally running:
 
 | Role | Port | Purpose |
 |------|------|---------|
 | **vlrggapi** | `3001` | Unofficial REST API for [vlr.gg](https://www.vlr.gg/) (matches, news, etc.). **Separate repo** — not vendored here. |
-| **Mock AWTRIX** (optional) | `7777` | Simulates the clock’s HTTP API when you don’t have the device on the network. |
 | **This dashboard** | `8000` | FastAPI app: UI, scheduling, calls into vlrggapi and AWTRIX. |
 
-With a **real Ulanzi / AWTRIX** device, point `awtrix_ip` in config at the device (e.g. `192.168.x.x:80`) and you can skip the mock server if you don’t need it for local testing.
+Point `awtrix_ip` in config at your **real Ulanzi / AWTRIX** device (for example `192.168.x.x:80`).
 
 ```mermaid
 flowchart LR
   subgraph user[Your machine]
     VLR[vlrggapi :3001]
     Dash[Dashboard :8000]
-    Mock[mock_awtrix :7777]
   end
   Clock[AWTRIX / Ulanzi]
   VLR -->|HTTP| Dash
-  Mock -.->|optional dev| Dash
   Dash -->|HTTP| Clock
 ```
 
@@ -74,7 +71,7 @@ cp config.example.json config.json
 
 Edit `config.json`:
 
-- **`awtrix_ip`** — IP and port of your AWTRIX device (e.g. `192.168.1.50:80`), or the mock server (`127.0.0.1:7777`) during development.
+- **`awtrix_ip`** — IP and port of your AWTRIX device (e.g. `192.168.1.50:80`).
 - **`weather`** — `location_name`, `latitude`, `longitude` for Open-Meteo.
 - **`valorant`**, **`reddit`**, **`twitch`**, **`module_order`**, **`modules`**, **`app_colors`** — tune to taste.
 
@@ -99,7 +96,7 @@ See the upstream README for Docker and Python version details. If you host vlrgg
 
 ## Running
 
-Start **vlrggapi** first, then optionally **mock AWTRIX**, then the **dashboard**. Use three terminals (or adapt paths to your clone locations).
+Start **vlrggapi** first, then the **dashboard**. Use two terminals (or adapt paths to your clone locations).
 
 **Terminal 1 — vlrggapi (port 3001)**
 
@@ -108,14 +105,7 @@ cd /path/to/vlrggapi
 /path/to/Ulanzi-VCT-Dashboard/venv/bin/python main.py
 ```
 
-**Terminal 2 — Mock AWTRIX (port 7777)** — skip if you only use a physical device with correct `awtrix_ip`.
-
-```bash
-cd /path/to/Ulanzi-VCT-Dashboard
-./venv/bin/python -m uvicorn mock_awtrix:app --host 0.0.0.0 --port 7777
-```
-
-**Terminal 3 — Dashboard (port 8000)**
+**Terminal 2 — Dashboard (port 8000)**
 
 ```bash
 cd /path/to/Ulanzi-VCT-Dashboard
@@ -126,7 +116,7 @@ Open **http://localhost:8000** in your browser.
 
 ### One-shot helper
 
-`start.sh` starts all three using a vlrggapi checkout at **`$HOME/Downloads/vlrggapi`**. Adjust `VLRAPI_DIR` inside the script if your clone lives elsewhere.
+`start.sh` starts both services using a vlrggapi checkout at **`$HOME/Downloads/vlrggapi`**. Adjust `VLRAPI_DIR` inside the script if your clone lives elsewhere.
 
 ```bash
 chmod +x start.sh
