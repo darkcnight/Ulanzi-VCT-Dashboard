@@ -1,0 +1,8 @@
+.env
+config.json
+.cursor/
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/

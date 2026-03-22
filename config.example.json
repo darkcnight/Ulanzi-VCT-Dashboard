@@ -1,0 +1,145 @@
+{
+  "awtrix_ip": "192.168.1.100:80",
+  "weather": {
+    "location_name": "Your City, Country",
+    "latitude": 0.0,
+    "longitude": 0.0,
+    "poll_interval_seconds": 1800
+  },
+  "reddit": {
+    "subreddits": [
+      "ValorantCompetitive"
+    ],
+    "min_score": 300,
+    "max_age_hours": 24,
+    "poll_interval_seconds": 1200,
+    "max_posts": 3
+  },
+  "team_tags": {
+    "T1 Academy": "T1A",
+    "Gen.G Global Academy": "GNA",
+    "Gen.G Academy": "GNA",
+    "DRX Academy": "DRA",
+    "Team Liquid Academy": "TLA",
+    "Sentinels Academy": "SNA",
+    "Cubert Academy": "CUA",
+    "MIBR Academy": "MIA",
+    "Leviatán Academy": "LEA",
+    "LEVIATÁN Academy": "LEA",
+    "FURIA Academy": "FUA",
+    "ZETA DIVISION Academy": "ZDA",
+    "Team Secret Academy": "TSA",
+    "Talon Academy": "TLNA",
+    "TALON Academy": "TLNA",
+    "RRQ Academy": "RRQA",
+    "Global Esports Academy": "GEA",
+    "DetonatioN FocusMe Academy": "DFMA",
+    "DFM Academy": "DFMA",
+    "KOI Fénix": "KOIF",
+    "KCORP Blue Stars": "KCBS",
+    "Karmine Corp Academy": "KCA",
+    "2Game Academy": "2GA",
+    "BBL PCIFIC": "BBLP",
+    "EDward Gaming Young": "EDGY",
+    "All Gamers Young": "AGY"
+  },
+  "valorant": {
+    "poll_interval_idle_seconds": 300,
+    "poll_interval_pre_match_seconds": 60,
+    "poll_interval_live_seconds": 30,
+    "cooldown_seconds": 180,
+    "pre_match_window_minutes": 15,
+    "live_priority": true,
+    "favourite_teams": [
+      "PRX",
+      "NRG",
+      "G2",
+      "FNC",
+      "DRX",
+      "TL",
+      "RRQ",
+      "FS",
+      "MIBR",
+      "NS",
+      "GEN",
+      "T1",
+      "BBL",
+      "GE"
+    ]
+  },
+  "twitch": {
+    "alert_duration_minutes": 10,
+    "channels": [
+      "valorant",
+      "valorant_americas",
+      "valorant_pacific",
+      "valorant_emea"
+    ],
+    "client_id": "",
+    "client_secret": ""
+  },
+  "pinned": {
+    "text": "",
+    "color": "#FFFFFF"
+  },
+  "countdowns": {
+    "events": [
+      {
+        "name": "Example event",
+        "date": "2026-12-31"
+      }
+    ]
+  },
+  "display": {
+    "scroll_speed": 150,
+    "sensor_temp_offset": 0,
+    "auto_dim_enabled": false,
+    "lux_threshold": 50,
+    "dim_brightness": 20,
+    "normal_brightness": 30,
+    "base_scroll_speed_px_per_sec": 40,
+    "matrix_width": 32,
+    "avg_char_width": 5,
+    "app_duration_floor": 10,
+    "app_duration_cap": 120
+  },
+  "built_in_apps": {
+    "TIM": false,
+    "DAT": false,
+    "TEMP": false,
+    "HUM": false,
+    "BAT": false
+  },
+  "module_order": [
+    "valorant_recent",
+    "valorant_live",
+    "twitch_live",
+    "countdown",
+    "weather",
+    "reddit_valorant",
+    "vlr_news",
+    "wordofday",
+    "pinned",
+    "timer"
+  ],
+  "modules": {
+    "valorant_live": true,
+    "valorant_recent": true,
+    "weather": true,
+    "reddit_valorant": true,
+    "vlr_news": true,
+    "countdown": true,
+    "wordofday": true,
+    "twitch_live": true,
+    "pinned": true
+  },
+  "app_colors": {
+    "countdown": "#32ff24",
+    "wordofday": "#db48b4",
+    "vlr_news": "#ffffff",
+    "weather": "#eeff00",
+    "valorant_recent": "#00ccff",
+    "valorant_live": "#ff0015",
+    "pinned": "#fbff00"
+  }
+}

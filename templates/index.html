@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ulanzi Clock</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <div class="header-sticky">
+  <header>
+    <div class="header-brand">
+      <span class="header-icon">⏱</span>
+      <span class="header-title">Ulanzi Clock</span>
+    </div>
+    <div class="header-device">
+      <span class="conn-dot" id="conn-dot"></span>
+      <span id="conn-label">Checking…</span>
+      <span class="conn-time" id="conn-time"></span>
+    </div>
+  </header>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="dashboard" onclick="showTab('dashboard')">Dashboard</button>
+    <button class="tab-btn" data-tab="settings" onclick="showTab('settings')">Settings</button>
+  </nav>
+  </div>
+
+  <!-- ── DASHBOARD TAB ─────────────────────────────────────────────── -->
+  <main id="tab-dashboard" class="tab-panel">
+
+    <div class="panel">
+      <div class="panel-title">Scheduler Status</div>
+      <div class="stat-row">
+        <div class="stat">
+          <div class="stat-label">Mode</div>
+          <div class="stat-value"><span id="scheduler-state" class="badge">—</span></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Last Poll</div>
+          <div class="stat-value mono" id="last-poll">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Next Poll</div>
+          <div class="stat-value mono" id="next-poll">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Current Time</div>
+          <div class="stat-value mono" id="current-time">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Active Apps</div>
+      <table>
+        <thead>
+          <tr><th>App</th><th>Text on device</th><th>Updated</th><th class="col-action"></th></tr>
+        </thead>
+        <tbody id="apps-list">
+          <tr><td colspan="4" class="muted">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Modules <span class="hint">(drag to reorder)</span></div>
+      <div id="modules-list" class="modules-grid">Loading…</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Countdown Timers</div>
+      <div id="dashboard-countdowns"></div>
+      <div class="inline-form" style="margin-top: 0.5rem;">
+        <input type="text" id="countdown-name-input" placeholder="Event name" class="w-sm">
+        <input type="date" id="countdown-date-input">
+        <button type="button" onclick="addCountdown()">Add</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Timer <span class="hint">(countdown with chime)</span></div>
+      <div id="dashboard-timer"></div>
+      <div class="inline-form" style="margin-top: 0.5rem;">
+        <select id="timer-preset" class="w-sm">
+          <option value="">Custom…</option>
+        </select>
+        <input type="number" id="timer-seconds" placeholder="Seconds" min="1" max="86400" style="width:80px;" title="Or use preset">
+        <input type="text" id="timer-name" placeholder="Name (optional)" class="w-sm">
+        <label class="checkbox-label" style="margin-left:0.3rem;">
+          <input type="checkbox" id="timer-chime" checked> Chime
+        </label>
+        <button type="button" onclick="startTimer()">Start</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Twitch Channels</div>
+      <div id="dashboard-twitch-channels"></div>
+      <div class="inline-form" style="margin-top: 0.5rem;">
+        <input type="text" id="twitch-channel-input" placeholder="Channel name" class="w-sm">
+        <button type="button" onclick="addTwitchChannel()">Add</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Pinned Message <span class="hint">(persists in app rotation)</span></div>
+      <div id="pinned-current"></div>
+      <div class="inline-form" style="margin-top: 0.5rem;">
+        <input type="text" id="pinned-text" placeholder="Text to pin on the clock…" autocomplete="off">
+        <input type="color" id="pinned-color" value="#FFFFFF" title="Text color" style="width:36px;height:30px;padding:2px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface2);cursor:pointer;">
+        <button type="button" onclick="savePinned()">Pin</button>
+        <button type="button" onclick="clearPinned()" class="btn-muted">Clear</button>
+        <span class="inline-result" id="pinned-result"></span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Quick Notify <span class="hint">(one-time flash)</span></div>
+      <form id="notify-form" class="inline-form">
+        <input type="text" id="custom-text" placeholder="Flash a message on screen…" autocomplete="off">
+        <input type="number" id="notify-duration" min="1" max="300" value="5" style="width:60px;" title="Duration (seconds)">
+        <span class="hint" style="margin-right:0.2rem;">sec</span>
+        <button type="submit">Send</button>
+        <span class="inline-result" id="send-result"></span>
+      </form>
+    </div>
+
+  </main>
+
+  <!-- ── SETTINGS TAB ──────────────────────────────────────────────── -->
+  <main id="tab-settings" class="tab-panel hidden">
+
+    <div class="panel">
+      <div class="panel-title">Device</div>
+      <div class="form-group">
+        <label>AWTRIX IP Address</label>
+        <div class="inline-form">
+          <input type="text" id="cfg-awtrix-ip" placeholder="192.168.1.xxx" class="w-sm">
+          <button type="button" onclick="pingDevice()">Ping</button>
+          <span class="inline-result" id="ping-result"></span>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top: 1rem;">
+        <label>Actions</label>
+        <div class="inline-form" style="margin-top: 0.5rem; margin-bottom: 1rem;">
+          <button type="button" onclick="softRestart()" class="btn-muted">Soft Restart</button>
+          <span class="hint">Reload config + force refresh all modules</span>
+          <span class="inline-result" id="soft-restart-result"></span>
+        </div>
+        <div class="inline-form">
+          <button type="button" onclick="rebootClock()" class="btn-muted">Reboot Clock</button>
+          <span class="hint">Restart the Ulanzi device (~30s). Required after changing Built-in Apps.</span>
+          <span class="inline-result" id="reboot-result"></span>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top: 1rem;">
+        <label>Built-in Apps <span class="hint">(Time, Date, Temp, Humidity, Battery — use Reboot Clock after changing)</span></label>
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem;">
+          <label class="checkbox-label"><input type="checkbox" id="cfg-builtin-TIM"> Time</label>
+          <label class="checkbox-label"><input type="checkbox" id="cfg-builtin-DAT"> Date</label>
+          <label class="checkbox-label"><input type="checkbox" id="cfg-builtin-TEMP"> Temperature</label>
+          <label class="checkbox-label"><input type="checkbox" id="cfg-builtin-HUM"> Humidity</label>
+          <label class="checkbox-label"><input type="checkbox" id="cfg-builtin-BAT"> Battery</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Display</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Scroll Speed <span class="hint">(%, higher = faster)</span></label>
+          <input type="number" min="10" max="200" id="cfg-display-speed">
+        </div>
+        <div class="form-group">
+          <label>Room Sensor Offset <span class="hint">(°C, e.g. -2 to compensate for LED heat)</span></label>
+          <input type="number" step="0.5" id="cfg-display-offset">
+        </div>
+        <div class="form-group">
+          <label>Base Scroll Speed <span class="hint">(px/s at 100% for duration calc)</span></label>
+          <input type="number" min="10" max="100" id="cfg-display-base-speed">
+        </div>
+        <div class="form-group">
+          <label>Matrix Width <span class="hint">(pixels, TC001=32)</span></label>
+          <input type="number" min="8" max="64" id="cfg-display-matrix-width">
+        </div>
+        <div class="form-group">
+          <label>Avg Char Width <span class="hint">(px for duration calc)</span></label>
+          <input type="number" min="3" max="10" step="0.5" id="cfg-display-avg-char">
+        </div>
+        <div class="form-group">
+          <label>Duration Floor <span class="hint">(short text min seconds, slow down to fill)</span></label>
+          <input type="number" min="3" max="30" id="cfg-display-dur-floor">
+        </div>
+        <div class="form-group">
+          <label>Duration Cap <span class="hint">(long text safety cap; repeat:1 ends when scroll done)</span></label>
+          <input type="number" min="30" max="300" id="cfg-display-dur-cap">
+        </div>
+      </div>
+      <div style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 0.85rem;">
+        <label class="checkbox-label" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;margin-bottom:0.75rem;">
+          <input type="checkbox" id="cfg-display-autodim" onchange="onAutoDimToggle()">
+          <span>Auto-dim when dark <span class="hint">(uses built-in light sensor)</span></span>
+        </label>
+        <div id="autodim-settings">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Lux Threshold <span class="hint">(dim below this)</span></label>
+              <input type="number" min="0" max="10000" id="cfg-display-lux">
+            </div>
+            <div class="form-group">
+              <label>Dim Brightness <span class="hint">(0–255)</span></label>
+              <div class="slider-with-value">
+                <input type="range" min="0" max="255" id="cfg-display-dimbri" oninput="this.nextElementSibling.textContent=this.value">
+                <span class="slider-value" id="cfg-display-dimbri-val">20</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Normal Brightness <span class="hint">(0–255)</span></label>
+              <div class="slider-with-value">
+                <input type="range" min="0" max="255" id="cfg-display-normalbri" oninput="this.nextElementSibling.textContent=this.value">
+                <span class="slider-value" id="cfg-display-normalbri-val">180</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="fixed-brightness-settings" class="hidden">
+          <div class="form-group">
+            <label>Fixed Brightness <span class="hint">(0–255, when auto-dim off)</span></label>
+            <div class="slider-with-value">
+              <input type="range" min="0" max="255" id="cfg-display-fixedbri" oninput="this.nextElementSibling.textContent=this.value">
+              <span class="slider-value" id="cfg-display-fixedbri-val">180</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Weather</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Location Name <span class="hint">(display only)</span></label>
+          <input type="text" id="cfg-weather-location">
+        </div>
+        <div class="form-group">
+          <label>Latitude</label>
+          <input type="number" step="0.0001" id="cfg-weather-lat">
+        </div>
+        <div class="form-group">
+          <label>Longitude</label>
+          <input type="number" step="0.0001" id="cfg-weather-lon">
+        </div>
+        <div class="form-group">
+          <label>Poll Interval <span class="hint">(seconds)</span></label>
+          <input type="number" min="60" id="cfg-weather-poll">
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Reddit</div>
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label>Subreddits <span class="hint">(comma-separated)</span></label>
+          <input type="text" id="cfg-reddit-subs" placeholder="ValorantCompetitive, VALORANT">
+        </div>
+        <div class="form-group">
+          <label>Min Upvotes</label>
+          <input type="number" min="0" id="cfg-reddit-score">
+        </div>
+        <div class="form-group">
+          <label>Max Age <span class="hint">(hours)</span></label>
+          <input type="number" min="1" max="168" id="cfg-reddit-age">
+        </div>
+        <div class="form-group">
+          <label>Poll Interval <span class="hint">(seconds)</span></label>
+          <input type="number" min="60" id="cfg-reddit-poll">
+        </div>
+        <div class="form-group">
+          <label>Max Posts</label>
+          <input type="number" min="1" max="10" id="cfg-reddit-posts">
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Valorant Polling</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Idle Interval <span class="hint">(seconds)</span></label>
+          <input type="number" min="10" id="cfg-val-idle">
+        </div>
+        <div class="form-group">
+          <label>Pre-match Interval <span class="hint">(seconds)</span></label>
+          <input type="number" min="10" id="cfg-val-prematch">
+        </div>
+        <div class="form-group">
+          <label>Live Interval <span class="hint">(seconds)</span></label>
+          <input type="number" min="5" id="cfg-val-live">
+        </div>
+        <div class="form-group">
+          <label>Cooldown Duration <span class="hint">(seconds)</span></label>
+          <input type="number" min="0" id="cfg-val-cooldown">
+        </div>
+        <div class="form-group">
+          <label>Pre-match Window <span class="hint">(minutes)</span></label>
+          <input type="number" min="1" id="cfg-val-window">
+        </div>
+      </div>
+      <div style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 0.85rem;">
+        <label class="checkbox-label" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;margin-bottom:0.75rem;">
+          <input type="checkbox" id="cfg-val-priority" onchange="onPriorityToggle()">
+          <span>Live Priority Mode <span class="hint">(suppress other apps during live matches)</span></span>
+        </label>
+        <div id="fav-teams-section">
+          <label style="display:block;margin-bottom:0.4rem;">
+            Favourite Teams <span class="hint">(priority activates only for these teams; leave empty for all matches)</span>
+          </label>
+          <div id="fav-teams-list" style="margin-bottom:0.6rem;"></div>
+          <div class="inline-form">
+            <input type="text" id="fav-team-input" placeholder="Tag e.g. PRX" style="width:120px;" autocomplete="off"
+              list="fav-team-tags-list"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();addFavouriteTeam();}">
+            <datalist id="fav-team-tags-list"></datalist>
+            <button type="button" onclick="addFavouriteTeam()">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Twitch API <span class="hint">(<a href="https://dev.twitch.tv/console/apps" target="_blank" style="color:var(--accent)">dev console</a>)</span></div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Client ID</label>
+          <input type="text" id="cfg-twitch-id">
+        </div>
+        <div class="form-group">
+          <label>Client Secret</label>
+          <input type="text" id="cfg-twitch-secret">
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Team Tags <span class="hint">(custom abbreviations)</span></div>
+      <div id="team-tags-list" style="margin-bottom: 0.75rem;"></div>
+      <div class="inline-form">
+        <input type="text" id="tag-name-input" placeholder="Full team name" class="w-sm">
+        <input type="text" id="tag-abbr-input" placeholder="TAG" style="width: 80px;">
+        <button type="button" onclick="addTeamTag()">Add</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Error Log <span class="hint">(rolling, ~7 days)</span></div>
+      <pre id="error-log" class="error-log-box"></pre>
+      <div class="inline-form" style="margin-top: 0.5rem;">
+        <button type="button" onclick="refreshErrorLog()">Refresh</button>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-primary" onclick="saveSettings()">Save Settings</button>
+      <span class="inline-result" id="save-result"></span>
+    </div>
+
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

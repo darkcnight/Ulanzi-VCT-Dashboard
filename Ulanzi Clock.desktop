@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Ulanzi Clock
+Comment=Start all Ulanzi Clock services
+Exec=bash -c 'cd "/home/quax/Downloads/Ulanzi Clock" && ./start.sh; exec bash'
+Terminal=true
+Type=Application
+Icon=clock
+Categories=Utility;
