@@ -125,6 +125,52 @@ chmod +x start.sh
 
 ---
 
+## Docker / NAS deployment
+
+Step-by-step NAS instructions: **[INSTALLATION.md](INSTALLATION.md)**.
+
+The repository includes a combined-image workflow for running **vlrggapi** and the dashboard in a single container.
+
+Build the image from this repo while keeping `vlrggapi` checked out beside it:
+
+```bash
+./scripts/build-combined-image.sh ulanzi-clock 2026-03-22
+```
+
+This build intentionally excludes `config.json` and `.env` so secrets and local settings are not baked into the image.
+
+To prepare a portable deployment bundle containing the image tar, `config.json`, and `.env` (if present), run:
+
+```bash
+./scripts/export-combined-deploy-bundle.sh /path/to/output ulanzi-clock 2026-03-22
+```
+
+On TrueNAS, store the copied files somewhere persistent, for example:
+
+- `/mnt/HDDs/Applications/ulanzi-clock/config.json`
+- `/mnt/HDDs/Applications/ulanzi-clock/.env`
+
+Mount both files into the container. `config.json` must be writable because the dashboard saves settings back into it; `.env` can be read-only.
+
+Example custom app YAML:
+
+```yaml
+services:
+  ulanzi-clock:
+    image: ulanzi-clock:2026-03-22
+    pull_policy: never
+    restart: unless-stopped
+    ports:
+      - "18000:8000"
+    volumes:
+      - /mnt/HDDs/Applications/ulanzi-clock/config.json:/app/dashboard/config.json
+      - /mnt/HDDs/Applications/ulanzi-clock/.env:/app/dashboard/.env:ro
+```
+
+Because `main.py` calls `load_dotenv()` on startup, a mounted `.env` at `/app/dashboard/.env` supplies `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` for the Twitch module.
+
+---
+
 ## Security and privacy
 
 - **Never commit** `config.json` or `.env` if they contain LAN IPs, API keys, or secrets. This repo ignores them; use `config.example.json` and `.env.example` as templates.
@@ -143,6 +189,14 @@ This project is **not affiliated with** Riot Games, VLR.gg, Twitch, Reddit, or a
 
 - **Andre Saddler ([@axsddlr](https://github.com/axsddlr))** — [**vlrggapi**](https://github.com/axsddlr/vlrggapi), the unofficial REST API for vlr.gg that this dashboard relies on for Valorant esports match and news data. Local URL defaults to `http://127.0.0.1:3001`.
 - **Blueforcer and the AWTRIX community** — [**AWTRIX 3**](https://github.com/Blueforcer/awtrix3), the firmware ecosystem that makes LED matrix devices like the Ulanzi TC001 programmable over a simple HTTP API. Documentation: [AWTRIX 3 docs](https://blueforcer.github.io/awtrix3/).
+
+---
+
+## AI-assisted development & expectations
+
+This project was built with **Cursor** (including **Composer**) and assistance from **Gemini**, **Claude**, and **ChatGPT**. Treat it as **experimental**: use **at your own risk**. The maintainer has tested it in their own environment and it works **for them**, but there is **no warranty** of fitness for any purpose.
+
+Issues are welcome on GitHub, but there are **no guarantees** they will be addressed or fixed. This stack is **very niche** and maintained primarily for **personal / self-use**.
 
 ---
 

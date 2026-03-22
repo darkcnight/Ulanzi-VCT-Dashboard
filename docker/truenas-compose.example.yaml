@@ -1,0 +1,10 @@
+services:
+  ulanzi-clock:
+    image: ulanzi-clock:2026-03-22
+    pull_policy: never
+    restart: unless-stopped
+    ports:
+      - "18000:8000"
+    volumes:
+      - /mnt/HDDs/Applications/ulanzi-clock/config.json:/app/dashboard/config.json
+      - /mnt/HDDs/Applications/ulanzi-clock/.env:/app/dashboard/.env:ro
