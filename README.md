@@ -158,4 +158,4 @@ This project is **not affiliated with** Riot Games, VLR.gg, Twitch, Reddit, or a
 
 ## License
 
-No license file is set in this repository yet; add one if you want to clarify reuse terms.
+No license file is set in this repository yet.
