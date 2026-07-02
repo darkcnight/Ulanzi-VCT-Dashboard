@@ -311,7 +311,14 @@ async def api_device_settings_save(request: Request):
     payload = {k: bool(data.get(k, True)) for k in keys}
     state.cfg["built_in_apps"] = payload
     _save_config(state.cfg)
+    
     if awtrix.update_settings(payload):
+        # Aggressively clear them from the active loop so a reboot isn't strictly necessary
+        app_map = {"TIM": "Time", "DAT": "Date", "TEMP": "Temp", "HUM": "Hum", "BAT": "Bat"}
+        for k, v in payload.items():
+            if not v and k in app_map:
+                awtrix.delete_app(app_map[k])
+                
         awtrix.reboot()  # Built-in app changes require reboot
         logger.info(f"[api] device settings applied, reboot sent: {payload}")
         return {"status": "saved", "applied_to_device": True}

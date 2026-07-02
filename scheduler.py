@@ -190,6 +190,25 @@ async def run_scheduler(awtrix, module_map: dict, live_exempt: set) -> None:
             state.device_last_checked = now_str
             if stats is None:
                 logger.warning("[scheduler] AWTRIX device did not respond to ping")
+            else:
+                current_uptime = stats.get("uptime", 0)
+                last_uptime = getattr(state, "_last_uptime", 9999999)
+                if current_uptime < last_uptime - 10:
+                    logger.info(f"[scheduler] device rebooted (uptime dropped from {last_uptime} to {current_uptime}). Re-applying settings and apps.")
+                    
+                    # Apply settings and aggressively clear them from the active loop
+                    built_in = state.cfg.get("built_in_apps", {})
+                    awtrix.update_settings(built_in)
+                    app_map = {"TIM": "Time", "DAT": "Date", "TEMP": "Temp", "HUM": "Hum", "BAT": "Bat"}
+                    for k, v in built_in.items():
+                        if not v and k in app_map:
+                            awtrix.delete_app(app_map[k])
+
+                    for name, mod in module_map.items():
+                        if name not in live_exempt and hasattr(mod, "restore"):
+                            mod.restore(awtrix)
+                state._last_uptime = current_uptime
+            
             _apply_auto_dim(awtrix)
 
             # ── Valorant live ─────────────────────────────────────────────────
