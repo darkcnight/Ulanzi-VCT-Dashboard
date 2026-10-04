@@ -21,7 +21,6 @@ from datetime import datetime, timedelta
 
 import state
 import weather
-import reddit
 import news
 import countdowns
 import timer
@@ -297,7 +296,6 @@ async def run_scheduler(awtrix, module_map: dict, live_exempt: set) -> None:
             # ── Module ticks (self-rate-limited) ──────────────────────────────
             live = (mode == "LIVE")
             weather.tick(awtrix,           is_live=live)
-            reddit.tick(awtrix,            is_live=live)
             news.tick(awtrix,              is_live=live)
             valorant_recent.tick(awtrix,   is_live=live)
             countdowns.tick(awtrix,        is_live=live)

@@ -99,7 +99,12 @@ def _parse_round(val) -> int | None:
 
 
 def format_live(match: dict) -> dict:
-    """Format a live segment into an AWTRIX custom-app payload."""
+    """Format a live segment into a static (non-scrolling) AWTRIX custom-app payload.
+
+    Favors a short, glanceable line over the old long scrolling string — round
+    score takes priority since it's the most time-sensitive info; series score
+    and map context are appended only if they fit without forcing a scroll.
+    """
     team1       = teams.get_tag(match.get("team1") or "???")
     team2       = teams.get_tag(match.get("team2") or "???")
     score1      = match.get("score1", "0")
@@ -117,36 +122,21 @@ def format_live(match: dict) -> dict:
     if has_rounds:
         r1   = (t1_ct or 0) + (t1_t or 0)
         r2   = (t2_ct or 0) + (t2_t or 0)
-        text = f"{team1} {r1}-{r2} {team2}  [{score1}-{score2}]"
-        if current_map:
-            text += f" {current_map}"
+        text = f"{team1} {r1}-{r2} {team2}"
     else:
-        # Between maps or pre-match: show series score + upcoming maps from veto
+        # Between maps or pre-match: series score is the headline instead
         text = f"{team1} {score1}-{score2} {team2}"
         if map_num and current_map:
-            text += f"  M{map_num} {current_map}"
-        elif current_map:
-            text += f"  {current_map}"
+            text += f" M{map_num}"
 
-        if _cached_map_order and current_map:
-            try:
-                idx       = _cached_map_order.index(current_map)
-                remaining = _cached_map_order[idx + 1:]
-                if remaining:
-                    text += f"  | Next: {remaining[0]}"
-                if len(remaining) > 1:
-                    text += f"  Dec: {remaining[-1]}"
-            except ValueError:
-                pass
-
-    scroll_spd, dur = state.scroll_params_for_text(text)
     return {
-        "text":        text,
-        "color":       state.get_app_color(APP_NAME),
-        "scrollSpeed": scroll_spd,
-        "lifetime":    0,  # No auto-removal; scroll continues until content changes
-        "duration":   dur,
-        "repeat":     -1,  # Loop so screen doesn't go blank when this is the only app
+        "text":     text,
+        "color":    state.get_app_color(APP_NAME),
+        "noScroll": True,
+        "center":   True,
+        "lifetime": 0,  # No auto-removal; page persists until content changes
+        "duration": int(state.cfg.get("display", {}).get("app_duration_floor", 10)),
+        "repeat":   -1,
     }
 
 
@@ -169,11 +159,8 @@ def push_live(awtrix, matches: list[dict]) -> None:
     payload = format_live(match)
     base_text = payload["text"]
     if base_text == _last_pushed_text:
-        return  # No change — let scroll continue uninterrupted
+        return  # No change — avoid redundant pushes
     _last_pushed_text = base_text
-
-    # 8 copies for smoother scroll (fewer visible restarts)
-    payload["text"] = "   |   ".join([base_text] * 8)
 
     state.active_apps[APP_NAME] = {
         "text":         base_text,
