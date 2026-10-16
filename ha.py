@@ -6,6 +6,7 @@ callers keep their cached values.
 
 import logging
 import os
+import re
 
 import httpx
 
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_URL = "http://192.168.18.186:8123"
 UNUSABLE = frozenset({"unavailable", "unknown"})
+_ENTITY_RE = re.compile(r"^[a-z0-9_]+\.[a-z0-9_]+$")
 
 
 def base_url() -> str:
@@ -25,6 +27,9 @@ def token() -> str:
 
 def get_state(entity_id: str) -> dict | None:
     """Return HA's state object for entity_id, or None on any failure."""
+    if not _ENTITY_RE.match(entity_id or ""):
+        logger.warning(f"[ha] rejected malformed entity id {entity_id!r}")
+        return None
     tok = token()
     if not tok:
         logger.warning("[ha] HA_TOKEN is not set in .env")

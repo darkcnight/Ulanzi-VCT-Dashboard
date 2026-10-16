@@ -57,3 +57,14 @@ def test_usable_and_numeric():
     assert ha.numeric({"state": "unavailable", "attributes": {}}) is None
     assert ha.numeric({"state": "abc", "attributes": {}}) is None
     assert ha.numeric(None) is None
+
+
+def test_get_state_rejects_malformed_entity_id(monkeypatch):
+    monkeypatch.setenv("HA_TOKEN", "tok")
+
+    def boom(*a, **k):
+        raise AssertionError("must not be called")
+
+    monkeypatch.setattr(ha.httpx, "get", boom)
+    for bad in ("../config", "light.x/../../config", "light", "", None, "light.x?y=1"):
+        assert ha.get_state(bad) is None
