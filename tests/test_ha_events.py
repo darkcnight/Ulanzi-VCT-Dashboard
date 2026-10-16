@@ -187,3 +187,89 @@ def test_notify_failure_is_swallowed(env):
     engine.handle(sc("light.l", "off", "on"))
     engine.flush()
     assert not engine.has_work()
+
+
+LEVEL = {
+    "name": "level", "type": "value", "entity": "light.l", "attribute": "brightness",
+    "scale": "percent255", "text": "Lights {value}%", "color": "#FFD700",
+    "settle_seconds": 1.5, "suppress_while": "input_boolean.sunrise",
+}
+
+
+def adj(old_b, new_b, state_="on"):
+    return sc("light.l", state_, state_, {"brightness": old_b}, {"brightness": new_b})
+
+
+def test_value_rule_debounces_to_one_popup_with_final_value(env):
+    engine, awtrix, clock, conf = env
+    conf["rules"] = [dict(LEVEL)]
+    engine.handle(adj(10, 51))
+    clock.t += 1.0
+    engine.handle(adj(51, 102))
+    clock.t += 1.0
+    engine.handle(adj(102, 128))
+    clock.t += 1.4          # 1.4 s after the last change: not settled yet
+    engine.flush()
+    assert awtrix.sent == []
+    clock.t += 0.2          # now 1.6 s after the last change
+    engine.flush()
+    assert awtrix.sent == [{"text": "Lights 50%", "color": "#FFD700", "duration": 5}]
+
+
+def test_value_rule_ignores_unchanged_missing_and_state_changes(env):
+    engine, awtrix, clock, conf = env
+    conf["rules"] = [dict(LEVEL)]
+    engine.handle(adj(10, 10))
+    engine.handle(sc("light.l", "on", "on", {"brightness": 10}, {}))
+    engine.handle(sc("light.l", "off", "on", {"brightness": None}, {"brightness": 26}))
+    clock.t += 5
+    engine.flush()
+    assert awtrix.sent == []
+
+
+def test_value_rule_raw_value_without_scale(env):
+    engine, awtrix, clock, conf = env
+    conf["rules"] = [{**LEVEL, "attribute": "color_temp_kelvin", "scale": None, "text": "{value}K", "suppress_while": None}]
+    engine.handle(sc("light.l", "on", "on", {"color_temp_kelvin": 2000}, {"color_temp_kelvin": 2700}))
+    clock.t += 2
+    engine.flush()
+    assert awtrix.sent[0]["text"] == "2700K"
+
+
+def test_suppress_while_gate_blocks_value_popups(env):
+    engine, awtrix, clock, conf = env
+    conf["rules"] = [dict(LEVEL)]
+    engine.handle(sc("input_boolean.sunrise", "off", "on"))
+    engine.handle(adj(10, 51))
+    clock.t += 2
+    engine.flush()
+    assert awtrix.sent == []
+    engine.handle(sc("input_boolean.sunrise", "on", "off"))
+    engine.handle(adj(51, 102))
+    clock.t += 2
+    engine.flush()
+    assert [p["text"] for p in awtrix.sent] == ["Lights 40%"]
+
+
+def test_seed_gates_reads_current_gate_state(env, monkeypatch):
+    engine, awtrix, clock, conf = env
+    conf["rules"] = [dict(LEVEL)]
+    monkeypatch.setattr(ha_events.ha, "get_state", lambda eid: {"state": "on", "attributes": {}})
+    engine.seed_gates()
+    engine.handle(adj(10, 51))
+    clock.t += 2
+    engine.flush()
+    assert awtrix.sent == []
+
+
+def test_automation_rule_fires_on_automation_triggered(env):
+    engine, awtrix, _, conf = env
+    conf["rules"] = [{"name": "sunrise", "type": "automation",
+                      "entity": "automation.sunrise", "text": "Sunrise", "color": "#FF8C00"}]
+    engine.handle({"event_type": "automation_triggered",
+                   "data": {"entity_id": "automation.other", "name": "other"}})
+    assert not engine.has_work()
+    engine.handle({"event_type": "automation_triggered",
+                   "data": {"entity_id": "automation.sunrise", "name": "Sunrise"}})
+    engine.flush()
+    assert awtrix.sent == [{"text": "Sunrise", "color": "#FF8C00", "duration": 5}]

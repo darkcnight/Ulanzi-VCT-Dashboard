@@ -12,6 +12,7 @@ import re
 import time
 from collections import deque
 
+import ha
 import state
 from ha import UNUSABLE
 
@@ -45,6 +46,8 @@ class EventEngine:
         self._queue: deque[dict] = deque(maxlen=MAX_QUEUE)
         self._last_emit = float("-inf")
         self._last_fired: dict[str, float] = {}
+        self._pending: dict[str, tuple] = {}   # rule name -> (due, rule, new_state, value)
+        self._gates: dict[str, str] = {}       # suppress_while entity -> last known state
 
     # ── Config ────────────────────────────────────────────────────────────────
 
@@ -60,19 +63,59 @@ class EventEngine:
     # ── Intake ────────────────────────────────────────────────────────────────
 
     def handle(self, event: dict) -> None:
-        if event.get("event_type") == "state_changed":
-            self._on_state_changed(event.get("data", {}))
+        etype, data = event.get("event_type"), event.get("data", {})
+        if etype == "state_changed":
+            self._on_state_changed(data)
+        elif etype == "automation_triggered":
+            self._on_automation(data)
+
+    def _gate_entities(self) -> set[str]:
+        return {r["suppress_while"] for r in self._rules() if r.get("suppress_while")}
+
+    def seed_gates(self) -> None:
+        """Read each suppress_while entity once (call after connecting)."""
+        for entity in self._gate_entities():
+            obj = ha.get_state(entity)
+            if obj:
+                self._gates[entity] = obj["state"]
 
     def _on_state_changed(self, data: dict) -> None:
         entity = data.get("entity_id")
         old, new = data.get("old_state"), data.get("new_state")
         if not new:
             return
+        if entity in self._gate_entities():
+            self._gates[entity] = new["state"]
         for rule in self._rules():
             if rule.get("entity") != entity:
                 continue
             if rule.get("type") == "state":
                 self._on_state_rule(rule, old, new)
+            elif rule.get("type") == "value":
+                self._on_value_rule(rule, old, new)
+
+    def _on_automation(self, data: dict) -> None:
+        entity = data.get("entity_id")
+        for rule in self._rules():
+            if rule.get("type") == "automation" and rule.get("entity") == entity:
+                self._enqueue(rule, rule, {"state": "triggered", "attributes": {}})
+
+    def _on_value_rule(self, rule: dict, old: dict | None, new: dict) -> None:
+        if old is None or new["state"] in UNUSABLE or old["state"] in UNUSABLE:
+            return
+        if old["state"] != new["state"]:
+            return          # on/off is announced by the state rule
+        gate = rule.get("suppress_while")
+        if gate and self._gates.get(gate) == "on":
+            return
+        attr = rule["attribute"]
+        before, after = old["attributes"].get(attr), new["attributes"].get(attr)
+        if after is None or after == before:
+            return
+        if rule.get("scale") == "percent255":
+            after = round(float(after) / 255 * 100)
+        due = self.clock() + float(rule.get("settle_seconds", 1.5))
+        self._pending[rule["name"]] = (due, rule, new, after)
 
     @staticmethod
     def _from_ok(rule: dict, old: dict | None) -> bool:
@@ -117,10 +160,14 @@ class EventEngine:
         self._queue.append(payload)
 
     def has_work(self) -> bool:
-        return bool(self._queue)
+        return bool(self._queue or self._pending)
 
     def flush(self) -> None:
         now = self.clock()
+        for name, (due, rule, new, value) in list(self._pending.items()):
+            if now >= due:
+                del self._pending[name]
+                self._enqueue(rule, rule, new, value)
         gap = float(self._cfg().get("min_gap_seconds", 3))
         if self._queue and now - self._last_emit >= gap:
             payload = self._queue.popleft()
