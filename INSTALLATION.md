@@ -6,7 +6,7 @@ This guide deploys the **combined image**: **vlrggapi** (port 3001 inside the co
 
 - TrueNAS SCALE with Apps / Docker working.
 - You build the image on a PC where this repo and [vlrggapi](https://github.com/axsddlr/vlrggapi) live side by side (default: `~/Downloads/Ulanzi Clock` and `~/Downloads/vlrggapi`).
-- You use a **persistent dataset path** on the NAS for `config.json` and optionally `.env` (example below uses `/mnt/HDDs/Applications/ulanzi-clock/` — adjust pool/dataset names to match your system).
+- You use a **persistent dataset path** on the NAS for `config.json` and `.env` (example below uses `/mnt/HDDs/Applications/ulanzi-clock/` — adjust pool/dataset names to match your system).
 
 ---
 
@@ -16,7 +16,7 @@ This guide deploys the **combined image**: **vlrggapi** (port 3001 inside the co
 |------|------|
 | Docker image `ulanzi-clock:<tag>` | Application code (dashboard + vlrggapi) |
 | Host file `.../config.json` | Mounted to `/app/dashboard/config.json` — **writable** (UI saves settings here) |
-| Host file `.../.env` (optional) | Mounted to `/app/dashboard/.env` — **read-only** OK — supplies Twitch API env vars |
+| Host file `.../.env` | Mounted to `/app/dashboard/.env` — **read-only** OK — supplies `HA_URL` / `HA_TOKEN` (weather and pop-ups) and the Twitch API vars |
 
 The image **does not** bake in `config.json` or `.env` (by design).
 

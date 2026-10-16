@@ -9,7 +9,7 @@ This repository contains the **dashboard** only. Match and news data come from a
 ## What’s included
 
 - **Web UI** at `http://localhost:8000` for configuration and monitoring.
-- **Modules** (toggle and order in `config.json`): recent results and upcoming matches, live match ticker, Twitch live alerts, countdowns, weather (Open-Meteo), Reddit posts, VLR news, word of the day, pinned text, timers.
+- **Modules** (toggle and order in `config.json`): recent results and upcoming matches, live match ticker, Twitch live alerts, countdowns, weather (Home Assistant) and live room pop-ups, Reddit posts, VLR news, word of the day, pinned text, timers.
 - **AWTRIX HTTP API client** to send apps to a physical device on your network.
 
 ---
@@ -42,7 +42,7 @@ flowchart LR
 
 - **Python** 3.10+ (3.11+ recommended; [vlrggapi](https://github.com/axsddlr/vlrggapi) documents Python 3.11).
 - **Git** (to clone this repo and vlrggapi).
-- Network access for **Open-Meteo**, **Reddit**, **Twitch** (if used), and your **AWTRIX** device or mock.
+- Network access to your **Home Assistant** (weather and event pop-ups), **Reddit**, **Twitch** (if used), and your **AWTRIX** device or mock.
 
 ---
 
@@ -72,10 +72,18 @@ cp config.example.json config.json
 Edit `config.json`:
 
 - **`awtrix_ip`** — IP and port of your AWTRIX device (e.g. `192.168.1.50:80`).
-- **`weather`** — `location_name`, `latitude`, `longitude` for Open-Meteo.
+- **`weather`** — `poll_interval_seconds`. The weather itself comes from Home Assistant (see below).
 - **`valorant`**, **`reddit`**, **`twitch`**, **`module_order`**, **`modules`**, **`app_colors`** — tune to taste.
 
 Optional **Twitch** integration: copy `.env.example` to `.env` and set `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` from the [Twitch Developer Console](https://dev.twitch.tv/console/apps).
+
+### Home Assistant
+
+Put `HA_URL` and `HA_TOKEN` (a long-lived access token from your HA profile page) in `.env`.
+
+- **Weather:** read from the entities in `ha.weather_entity` and `ha.rain_entity` in `config.json` (defaults: the NEA Singapore integration).
+- **Live pop-ups:** `ha_events.rules` in `config.json` decide which HA events show as short pop-ups on the clock. Rule types: `state` (an entity changes to a listed state), `value` (an attribute changes, e.g. brightness; waits `settle_seconds` so a slider swipe gives one pop-up), `automation` (an automation starts). Optional flags: `any` (match any new state), `hold` (stay until dismissed), `fire_from_unknown`, `cooldown_seconds`, `suppress_while` (skip while another entity is `on`). Text can use `{value}`, `{state}` and `{attr.NAME}`.
+- Doorbell rules are added once the doorbell is wired into HA.
 
 ### 4. vlrggapi (required for Valorant modules)
 

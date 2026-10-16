@@ -7,6 +7,65 @@
     "weather_entity": "weather.singapore_weather",
     "rain_entity": "sensor.singapore_weather_rainfall_s228"
   },
+  "ha_events": {
+    "min_gap_seconds": 3,
+    "during_live_match": true,
+    "rules": [
+      {
+        "name": "bedroom lights",
+        "type": "state",
+        "entity": "light.surya_bedroom_lights",
+        "states": {
+          "on":  {"text": "Lights ON",  "color": "#FFD700"},
+          "off": {"text": "Lights OFF", "color": "#888888"}
+        }
+      },
+      {
+        "name": "bedroom light level",
+        "type": "value",
+        "entity": "light.surya_bedroom_lights",
+        "attribute": "brightness",
+        "scale": "percent255",
+        "text": "Lights {value}%",
+        "color": "#FFD700",
+        "settle_seconds": 1.5,
+        "suppress_while": "input_boolean.surya_sunrise_running"
+      },
+      {
+        "name": "sunrise",
+        "type": "automation",
+        "entity": "automation.surya_bedroom_sunrise_wake_up",
+        "text": "Sunrise",
+        "color": "#FF8C00"
+      },
+      {
+        "name": "aircon",
+        "type": "state",
+        "entity": "climate.surya_bedroom_aircon",
+        "states": {
+          "cool":     {"text": "AC cool {attr.temperature}", "color": "#4FC3F7"},
+          "dry":      {"text": "AC dry",                     "color": "#4FC3F7"},
+          "fan_only": {"text": "AC fan",                     "color": "#B0BEC5"},
+          "off":      {"text": "AC off",                     "color": "#888888"}
+        }
+      },
+      {
+        "name": "aircon sleep timer",
+        "type": "automation",
+        "entity": "automation.surya_bedroom_aircon_sleep_timer",
+        "text": "Sleep timer",
+        "color": "#9C27B0"
+      },
+      {
+        "name": "welcome home",
+        "type": "state",
+        "entity": "person.surya",
+        "states": {
+          "home": {"text": "Welcome home Surya", "color": "#32FF24", "duration": 8}
+        }
+      }
+    ]
+  },
   "reddit": {
     "subreddits": [
       "ValorantCompetitive"
