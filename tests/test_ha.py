@@ -66,5 +66,5 @@ def test_get_state_rejects_malformed_entity_id(monkeypatch):
         raise AssertionError("must not be called")
 
     monkeypatch.setattr(ha.httpx, "get", boom)
-    for bad in ("../config", "light.x/../../config", "light", "", None, "light.x?y=1"):
+    for bad in ("../config", "light.x/../../config", "light", "", None, 123, "light.x?y=1", "light.x\n"):
         assert ha.get_state(bad) is None

@@ -27,7 +27,7 @@ def token() -> str:
 
 def get_state(entity_id: str) -> dict | None:
     """Return HA's state object for entity_id, or None on any failure."""
-    if not _ENTITY_RE.match(entity_id or ""):
+    if not isinstance(entity_id, str) or not _ENTITY_RE.fullmatch(entity_id):
         logger.warning(f"[ha] rejected malformed entity id {entity_id!r}")
         return None
     tok = token()
