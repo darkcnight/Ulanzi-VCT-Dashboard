@@ -7,3 +7,4 @@ cachetools==5.5.2
 lxml==6.0.2
 slowapi==0.1.9
 selectolax==0.4.6
+websockets==15.0.1
