@@ -658,10 +658,7 @@ async function loadSettings() {
     });
 
     const w = cfg.weather ?? {};
-    set('cfg-weather-location',   w.location_name ?? '');
-    set('cfg-weather-lat',        w.latitude ?? 1.3404);
-    set('cfg-weather-lon',        w.longitude ?? 103.7054);
-    set('cfg-weather-poll',       w.poll_interval_seconds ?? 1800);
+    set('cfg-weather-poll',       w.poll_interval_seconds ?? 300);
 
     const r = cfg.reddit ?? {};
     set('cfg-reddit-subs',        (r.subreddits ?? ['ValorantCompetitive']).join(', '));
@@ -791,9 +788,6 @@ async function saveSettings() {
       BAT:  document.getElementById('cfg-builtin-BAT')?.checked ?? true,
     },
     weather: {
-      location_name:        get('cfg-weather-location').trim(),
-      latitude:             parseFloat(get('cfg-weather-lat')),
-      longitude:            parseFloat(get('cfg-weather-lon')),
       poll_interval_seconds: parseInt(get('cfg-weather-poll')),
     },
     reddit: {

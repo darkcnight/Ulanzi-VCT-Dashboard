@@ -1,44 +1,38 @@
 """
-Weather module — Open-Meteo, configurable coordinates (default: Boon Lay, Singapore).
-Poll interval and location read from state.cfg at call time.
-Suppressed during live Valorant matches.
+Weather module — reads Home Assistant (NEA Singapore integration): condition and
+temperature from a weather entity, plus rainfall from the nearest station sensor.
+Entity IDs are config (ha.weather_entity, ha.rain_entity). Poll interval is read
+from state.cfg at call time. Suppressed during live Valorant matches.
 """
 
-import httpx
 import logging
 from datetime import datetime
 
+import ha
 import state
 
 logger = logging.getLogger(__name__)
 
 APP_NAME = "weather"
 
-# ── WMO weather code → (label, hex colour) ───────────────────────────────────
+# ── HA weather condition → (label, hex colour) ───────────────────────────────
 
-_WMO: dict[int, tuple[str, str]] = {
-    0:  ("Clear",         "#FFD700"),
-    1:  ("Clear",         "#FFD700"),
-    2:  ("Partly cloudy", "#87CEEB"),
-    3:  ("Overcast",      "#9E9E9E"),
-    45: ("Foggy",         "#B0BEC5"),
-    48: ("Icy fog",       "#B0BEC5"),
-    51: ("Drizzle",       "#4FC3F7"),
-    53: ("Drizzle",       "#4FC3F7"),
-    55: ("Drizzle",       "#0288D1"),
-    61: ("Light rain",    "#4FC3F7"),
-    63: ("Rain",          "#0288D1"),
-    65: ("Heavy rain",    "#01579B"),
-    71: ("Light snow",    "#E0E0E0"),
-    73: ("Snow",          "#E0E0E0"),
-    75: ("Heavy snow",    "#E0E0E0"),
-    77: ("Snow grains",   "#E0E0E0"),
-    80: ("Showers",       "#4FC3F7"),
-    81: ("Showers",       "#0288D1"),
-    82: ("Heavy showers", "#01579B"),
-    95: ("Thunderstorm",  "#FF6F00"),
-    96: ("Thunderstorm",  "#FF6F00"),
-    99: ("Thunderstorm",  "#FF6F00"),
+_CONDITIONS: dict[str, tuple[str, str]] = {
+    "sunny":           ("Sunny",         "#FFD700"),
+    "clear-night":     ("Clear",         "#FFD700"),
+    "partlycloudy":    ("Partly cloudy", "#87CEEB"),
+    "cloudy":          ("Cloudy",        "#9E9E9E"),
+    "fog":             ("Foggy",         "#B0BEC5"),
+    "hail":            ("Hail",          "#E0E0E0"),
+    "lightning":       ("Thunderstorm",  "#FF6F00"),
+    "lightning-rainy": ("Thunderstorm",  "#FF6F00"),
+    "pouring":         ("Heavy rain",    "#01579B"),
+    "rainy":           ("Rain",          "#0288D1"),
+    "snowy":           ("Snow",          "#E0E0E0"),
+    "snowy-rainy":     ("Sleet",         "#E0E0E0"),
+    "windy":           ("Windy",         "#B0BEC5"),
+    "windy-variant":   ("Windy",         "#B0BEC5"),
+    "exceptional":     ("Alert",         "#FF6F00"),
 }
 
 # ── Module state ──────────────────────────────────────────────────────────────
@@ -52,35 +46,34 @@ _cached: dict | None = None
 def _wcfg() -> dict:
     return state.cfg.get("weather", {})
 
-def _poll_interval() -> int:
-    return int(_wcfg().get("poll_interval_seconds", 1800))
+def _hcfg() -> dict:
+    return state.cfg.get("ha", {})
 
-def _api_url() -> str:
-    lat = _wcfg().get("latitude", 1.3404)
-    lon = _wcfg().get("longitude", 103.7054)
-    return (
-        "https://api.open-meteo.com/v1/forecast"
-        f"?latitude={lat}&longitude={lon}"
-        "&current=temperature_2m,weather_code"
-        "&timezone=Asia/Singapore"
-    )
+def _poll_interval() -> int:
+    return int(_wcfg().get("poll_interval_seconds", 300))
+
+def _weather_entity() -> str:
+    return _hcfg().get("weather_entity", "weather.singapore_weather")
+
+def _rain_entity() -> str:
+    return _hcfg().get("rain_entity", "sensor.singapore_weather_rainfall_s228")
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
 def _fetch() -> dict | None:
-    try:
-        resp = httpx.get(_api_url(), timeout=10)
-        resp.raise_for_status()
-        current = resp.json()["current"]
-        temp  = round(float(current["temperature_2m"]), 1)
-        code  = int(current["weather_code"])
-        label, color = _WMO.get(code, ("Unknown", "#FFFFFF"))
-        logger.info(f"[weather] {temp}°C  {label}  (WMO {code})")
-        return {"temp": temp, "label": label, "color": color}
-    except Exception as e:
-        logger.error(f"[weather] fetch failed: {e}")
+    obj = ha.get_state(_weather_entity())
+    if not ha.usable(obj):
         return None
+    temp = obj.get("attributes", {}).get("temperature")
+    if temp is None:
+        logger.warning(f"[weather] {_weather_entity()} has no temperature attribute")
+        return None
+    condition = obj["state"]
+    label, color = _CONDITIONS.get(condition, (condition.replace("-", " ").title(), "#FFFFFF"))
+    rain = ha.numeric(ha.get_state(_rain_entity()))
+    logger.info(f"[weather] {temp}°C  {label}  rain={rain}")
+    return {"temp": round(float(temp), 1), "label": label, "color": color, "rain": rain}
 
 
 def _room_suffix() -> str:
@@ -96,8 +89,15 @@ def _room_suffix() -> str:
     return f"  |  \u2302 {room_temp}\u00b0C {room_hum}%"
 
 
+def _build_text(data: dict) -> str:
+    text = f"{data['temp']}°C {data['label']}"
+    if data.get("rain"):
+        text += f"  |  Rain {data['rain']:g}mm"
+    return text + _room_suffix()
+
+
 def _push(awtrix, data: dict) -> None:
-    text = f"{data['temp']}°C {data['label']}" + _room_suffix()
+    text = _build_text(data)
     color = state.get_app_color(APP_NAME, fallback=data["color"])
     scroll_spd, dur = state.scroll_params_for_text(text)
     payload = {
@@ -134,7 +134,7 @@ def tick(awtrix, is_live: bool) -> None:
             _cached = result
         _last_fetch = now   # update even on failure to avoid hammering
         if _cached:
-            text = f"{_cached['temp']}°C {_cached['label']}" + _room_suffix()
+            text = _build_text(_cached)
             color = state.get_app_color(APP_NAME, fallback=_cached["color"])
             state.active_apps[APP_NAME] = {
                 "text":         text,

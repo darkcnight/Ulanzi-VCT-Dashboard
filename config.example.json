@@ -1,10 +1,11 @@
 {
   "awtrix_ip": "192.168.1.100:80",
   "weather": {
-    "location_name": "Your City, Country",
-    "latitude": 0.0,
-    "longitude": 0.0,
-    "poll_interval_seconds": 1800
+    "poll_interval_seconds": 300
+  },
+  "ha": {
+    "weather_entity": "weather.singapore_weather",
+    "rain_entity": "sensor.singapore_weather_rainfall_s228"
   },
   "reddit": {
     "subreddits": [
