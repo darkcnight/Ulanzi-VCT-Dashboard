@@ -273,3 +273,10 @@ def test_automation_rule_fires_on_automation_triggered(env):
                    "data": {"entity_id": "automation.sunrise", "name": "Sunrise"}})
     engine.flush()
     assert awtrix.sent == [{"text": "Sunrise", "color": "#FF8C00", "duration": 5}]
+
+
+def test_ws_url(monkeypatch):
+    monkeypatch.setenv("HA_URL", "http://192.168.18.186:8123/")
+    assert ha_events.ws_url() == "ws://192.168.18.186:8123/api/websocket"
+    monkeypatch.setenv("HA_URL", "https://ha.example.com")
+    assert ha_events.ws_url() == "wss://ha.example.com/api/websocket"

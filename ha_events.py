@@ -7,10 +7,14 @@ it (run_event_stream) is at the bottom of the file. Rules come from
 state.cfg["ha_events"] at call time.
 """
 
+import asyncio
+import json
 import logging
 import re
 import time
 from collections import deque
+
+import websockets
 
 import ha
 import state
@@ -177,3 +181,63 @@ class EventEngine:
                 logger.info(f"[ha_events] pop-up: {payload['text']}")
             except Exception as e:
                 logger.warning(f"[ha_events] notify failed: {e}")
+
+
+# ── WebSocket stream ──────────────────────────────────────────────────────────
+
+def ws_url() -> str:
+    # http://… → ws://…, https://… → wss://…
+    return "ws" + ha.base_url()[4:] + "/api/websocket"
+
+
+async def _session(engine: EventEngine) -> None:
+    async with websockets.connect(ws_url(), open_timeout=10) as ws:
+        await ws.recv()                                   # auth_required
+        await ws.send(json.dumps({"type": "auth", "access_token": ha.token()}))
+        reply = json.loads(await ws.recv())
+        if reply.get("type") != "auth_ok":
+            raise PermissionError(f"Home Assistant rejected the token: {reply.get('message', reply)}")
+        await ws.send(json.dumps({"id": 1, "type": "subscribe_events", "event_type": "state_changed"}))
+        await ws.send(json.dumps({"id": 2, "type": "subscribe_events", "event_type": "automation_triggered"}))
+        engine.seed_gates()
+        engine.connected = True
+        logger.info("[ha_events] connected to Home Assistant")
+        while True:
+            try:
+                raw = await asyncio.wait_for(ws.recv(), timeout=0.5)
+            except asyncio.TimeoutError:
+                raw = None
+            if raw is not None:
+                msg = json.loads(raw)
+                if msg.get("type") == "event":
+                    engine.handle(msg["event"])
+            if engine.has_work():
+                engine.flush()
+
+
+async def run_event_stream(awtrix) -> None:
+    """Keep the HA event feed running; reconnect with backoff (2 s doubling to 60 s)."""
+    engine = EventEngine(awtrix)
+    backoff = 2
+    was_up = False
+    while True:
+        if not ha.token():
+            logger.error("[ha_events] HA_TOKEN is not set in .env — event feed disabled")
+            return
+        if not engine.enabled():
+            await asyncio.sleep(30)          # no rules configured; check again later
+            continue
+        try:
+            await _session(engine)
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            if engine.connected:
+                backoff, was_up, engine.connected = 2, True, False
+            if was_up:
+                logger.warning(f"[ha_events] connection lost: {e!r}; retrying")
+                was_up = False
+            else:
+                logger.debug(f"[ha_events] still disconnected: {e!r}")
+        await asyncio.sleep(backoff)
+        backoff = min(backoff * 2, 60)
