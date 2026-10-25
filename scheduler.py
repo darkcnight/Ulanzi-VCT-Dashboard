@@ -186,10 +186,15 @@ async def run_scheduler(awtrix, module_map: dict, live_exempt: set) -> None:
                     # Apply settings and aggressively clear them from the active loop
                     built_in = state.cfg.get("built_in_apps", {})
                     awtrix.update_settings(built_in)
-                    app_map = {"TIM": "Time", "DAT": "Date", "TEMP": "Temp", "HUM": "Hum", "BAT": "Bat"}
-                    for k, v in built_in.items():
-                        if not v and k in app_map:
-                            awtrix.delete_app(app_map[k])
+                    
+                    async def clear_builtins_delayed():
+                        app_map = {"TIM": "Time", "DAT": "Date", "TEMP": "Temp", "HUM": "Hum", "BAT": "Bat"}
+                        for delay in (2, 5, 10, 20):
+                            await asyncio.sleep(delay)
+                            for k, v in built_in.items():
+                                if not v and k in app_map:
+                                    awtrix.delete_app(app_map[k])
+                    asyncio.create_task(clear_builtins_delayed())
 
                     for name, mod in module_map.items():
                         if name not in live_exempt and hasattr(mod, "restore"):
