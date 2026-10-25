@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 import state
 import teams
+import team_filter
 import weather
 import reddit
 import news
@@ -192,6 +193,19 @@ def api_team_tags():
     tags = set(teams.TEAM_TAGS.values())
     tags.update(state.cfg.get("team_tags", {}).values())
     return {"tags": sorted(tags)}
+
+
+@app.get("/api/teams")
+def api_teams():
+    """Effective favourite/ignore lists plus known team names for the picker autocomplete."""
+    seen = {t for m in valorant_recent._cached_results + valorant_recent._cached_upcoming
+            for t in (m.get("team1"), m.get("team2")) if t}
+    known = set(teams.TEAM_TAGS) | seen | set(team_filter.favourite_names())
+    return {
+        "favourites": team_filter.favourite_names(),
+        "ignored":    team_filter.ignored_patterns(),
+        "known":      sorted(n for n in known if not team_filter.is_ignored(n)),
+    }
 
 
 @app.post("/api/config")

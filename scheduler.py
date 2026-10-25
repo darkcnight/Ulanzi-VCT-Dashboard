@@ -28,7 +28,7 @@ import timer
 import wordofday
 import twitch_live
 import pinned
-import teams as teams_mod
+import team_filter
 from valorant_live import fetch_live, push_live
 import valorant_recent
 from valorant_recent import fetch_upcoming
@@ -94,27 +94,14 @@ def _pre_match_window() -> int:
 def _should_suppress(live_matches: list[dict]) -> bool:
     """Return True if the current live matches warrant full suppression of other modules.
 
-    Rules:
     - If live_priority is False → never suppress.
-    - If favourite_teams is empty → always suppress (original behaviour).
-    - Otherwise → suppress only when at least one team in any live match
-      matches a tag in favourite_teams (case-insensitive).
+    - Otherwise suppress when any live match passes team_filter.is_favourite_match:
+      not an ignored (academy / Game Changers) match, and — if favourites are set —
+      involving a favourite team by full name.
     """
-    v = _vcfg()
-    if not v.get("live_priority", True):
+    if not _vcfg().get("live_priority", True):
         return False
-
-    favourites = {t.strip().upper() for t in v.get("favourite_teams", []) if t.strip()}
-    if not favourites:
-        return True  # no filter set — suppress for all matches
-
-    for match in live_matches:
-        t1 = teams_mod.get_tag(match.get("team1") or "").upper()
-        t2 = teams_mod.get_tag(match.get("team2") or "").upper()
-        if t1 in favourites or t2 in favourites:
-            return True
-
-    return False
+    return any(team_filter.is_favourite_match(m) for m in live_matches)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

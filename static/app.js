@@ -575,37 +575,45 @@ document.getElementById('notify-form').addEventListener('submit', async (e) => {
 
 let _teamTags       = {};
 let _favouriteTeams = [];
+let _ignoredTeams   = [];
 
-function renderFavouriteTeams() {
-  const el = document.getElementById('fav-teams-list');
+function _renderTeamChips(elId, items, removeFn, emptyText) {
+  const el = document.getElementById(elId);
   if (!el) return;
-  if (_favouriteTeams.length === 0) {
-    el.innerHTML = '<span class="muted">All matches (no team filter)</span>';
+  if (items.length === 0) {
+    el.innerHTML = `<span class="muted">${emptyText}</span>`;
     return;
   }
   el.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">' +
-    _favouriteTeams.map((tag, i) =>
+    items.map((name, i) =>
       `<span class="module-toggle is-on">
-        <span class="toggle-name">${escHtml(tag)}</span>
-        <button type="button" class="tag-remove-btn" onclick="removeFavouriteTeam(${i})"
+        <span class="toggle-name">${escHtml(name)}</span>
+        <button type="button" class="tag-remove-btn" onclick="${removeFn}(${i})"
                 style="padding:0 0.35rem;font-size:0.7rem;margin-left:0.2rem;">x</button>
       </span>`
     ).join('') + '</div>';
 }
 
-function addFavouriteTeam() {
-  const input = document.getElementById('fav-team-input');
-  const tag   = input.value.trim().toUpperCase();
-  if (!tag || _favouriteTeams.includes(tag)) { input.value = ''; return; }
-  _favouriteTeams.push(tag);
-  renderFavouriteTeams();
+function renderFavouriteTeams() {
+  _renderTeamChips('fav-teams-list', _favouriteTeams, 'removeFavouriteTeam',
+                   'All matches (no team filter)');
+}
+
+function renderIgnoredTeams() {
+  _renderTeamChips('ignored-teams-list', _ignoredTeams, 'removeIgnoredTeam', 'Nothing ignored');
+}
+
+function _addTo(list, inputId) {
+  const input = document.getElementById(inputId);
+  const name  = input.value.trim();
+  if (name && !list.some(n => n.toLowerCase() === name.toLowerCase())) list.push(name);
   input.value = '';
 }
 
-function removeFavouriteTeam(idx) {
-  _favouriteTeams.splice(idx, 1);
-  renderFavouriteTeams();
-}
+function addFavouriteTeam() { _addTo(_favouriteTeams, 'fav-team-input'); renderFavouriteTeams(); }
+function removeFavouriteTeam(idx) { _favouriteTeams.splice(idx, 1); renderFavouriteTeams(); }
+function addIgnoredTeam() { _addTo(_ignoredTeams, 'ignored-team-input'); renderIgnoredTeams(); }
+function removeIgnoredTeam(idx) { _ignoredTeams.splice(idx, 1); renderIgnoredTeams(); }
 
 function onPriorityToggle() {
   const enabled = document.getElementById('cfg-val-priority').checked;
@@ -679,21 +687,20 @@ async function loadSettings() {
 
     const priorityEl = document.getElementById('cfg-val-priority');
     if (priorityEl) priorityEl.checked = v.live_priority ?? true;
-    _favouriteTeams = [...(v.favourite_teams ?? [])];
-    renderFavouriteTeams();
-    onPriorityToggle();
-
-    // Populate favourite-team tag autocomplete
+    // Effective favourites / ignore list (server migrates legacy tag favourites) + picker names
     try {
-      const tagsRes = await fetch('/api/team-tags');
-      if (tagsRes.ok) {
-        const { tags } = await tagsRes.json();
-        const dl = document.getElementById('fav-team-tags-list');
-        if (dl && Array.isArray(tags)) {
-          dl.innerHTML = tags.map(t => `<option value="${escHtml(t)}">`).join('');
-        }
+      const teamsRes = await fetch('/api/teams');
+      if (teamsRes.ok) {
+        const t = await teamsRes.json();
+        _favouriteTeams = t.favourites ?? [];
+        _ignoredTeams   = t.ignored ?? [];
+        const dl = document.getElementById('fav-team-names-list');
+        if (dl) dl.innerHTML = (t.known ?? []).map(n => `<option value="${escHtml(n)}">`).join('');
       }
     } catch (_) { /* ignore */ }
+    renderFavouriteTeams();
+    renderIgnoredTeams();
+    onPriorityToggle();
 
     const tw = cfg.twitch ?? {};
     set('cfg-twitch-id',          tw.client_id ?? '');
@@ -805,7 +812,8 @@ async function saveSettings() {
       cooldown_seconds:                parseInt(get('cfg-val-cooldown')),
       pre_match_window_minutes:        parseInt(get('cfg-val-window')),
       live_priority:                   document.getElementById('cfg-val-priority')?.checked ?? true,
-      favourite_teams:                 [..._favouriteTeams],
+      favourite_team_names:            [..._favouriteTeams],
+      ignored_teams:                   [..._ignoredTeams],
     },
     twitch: {
       ...(currentCfg.twitch || {}),

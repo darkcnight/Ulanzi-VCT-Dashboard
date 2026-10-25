@@ -309,11 +309,20 @@
           </label>
           <div id="fav-teams-list" style="margin-bottom:0.6rem;"></div>
           <div class="inline-form">
-            <input type="text" id="fav-team-input" placeholder="Tag e.g. PRX" style="width:120px;" autocomplete="off"
-              list="fav-team-tags-list"
+            <input type="text" id="fav-team-input" placeholder="Full team name e.g. Paper Rex" style="width:240px;" autocomplete="off"
+              list="fav-team-names-list"
               onkeydown="if(event.key==='Enter'){event.preventDefault();addFavouriteTeam();}">
-            <datalist id="fav-team-tags-list"></datalist>
+            <datalist id="fav-team-names-list"></datalist>
             <button type="button" onclick="addFavouriteTeam()">Add</button>
+          </div>
+          <label style="display:block;margin:1rem 0 0.4rem;">
+            Ignored Teams <span class="hint">(never trigger live priority — matched as whole words in the team or event name, e.g. Academy, Game Changers, GC, Young)</span>
+          </label>
+          <div id="ignored-teams-list" style="margin-bottom:0.6rem;"></div>
+          <div class="inline-form">
+            <input type="text" id="ignored-team-input" placeholder="Word or team name" style="width:240px;" autocomplete="off"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();addIgnoredTeam();}">
+            <button type="button" onclick="addIgnoredTeam()">Add</button>
           </div>
         </div>
       </div>
