@@ -73,7 +73,7 @@ Edit `config.json`:
 
 - **`awtrix_ip`** — IP and port of your AWTRIX device (e.g. `192.168.1.50:80`).
 - **`weather`** — `poll_interval_seconds`. The weather itself comes from Home Assistant (see below).
-- **`valorant`**, **`reddit`**, **`twitch`**, **`module_order`**, **`modules`**, **`app_colors`** — tune to taste.
+- **`valorant`**, **`twitch`**, **`module_order`**, **`modules`**, **`app_colors`** — tune to taste.
 
 Optional **Twitch** integration: copy `.env.example` to `.env` and set `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` from the [Twitch Developer Console](https://dev.twitch.tv/console/apps).
 

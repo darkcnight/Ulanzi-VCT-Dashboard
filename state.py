@@ -18,7 +18,6 @@ modules: dict[str, bool] = {
     "valorant_live":   True,
     "valorant_recent": True,
     "weather":         True,
-    "reddit_valorant": True,
     "vlr_news":        True,
     "countdown":       True,
     "timer":           True,
@@ -44,7 +43,6 @@ cfg: dict = {}
 APP_DEFAULT_COLORS: dict[str, str] = {
     "valorant_live":   "#FF4655",
     "valorant_recent": "#4FC3F7",
-    "reddit_valorant": "#FF8C00",
     "vlr_news":        "#C89B3C",
     "countdown":       "#E040FB",
     "timer":           "#00E676",

@@ -15,7 +15,6 @@ import state
 import teams
 import team_filter
 import weather
-import reddit
 import news
 import valorant_recent
 import countdowns
@@ -72,7 +71,6 @@ awtrix = AwtrixClient(raw_config["awtrix_ip"])
 
 _module_map = {
     "weather":         weather,
-    "reddit_valorant": reddit,
     "vlr_news":        news,
     "valorant_recent": valorant_recent,
     "countdown":       countdowns,

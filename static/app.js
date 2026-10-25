@@ -668,13 +668,6 @@ async function loadSettings() {
     const w = cfg.weather ?? {};
     set('cfg-weather-poll',       w.poll_interval_seconds ?? 300);
 
-    const r = cfg.reddit ?? {};
-    set('cfg-reddit-subs',        (r.subreddits ?? ['ValorantCompetitive']).join(', '));
-    set('cfg-reddit-score',       r.min_score ?? 300);
-    set('cfg-reddit-age',         r.max_age_hours ?? 24);
-    set('cfg-reddit-poll',        r.poll_interval_seconds ?? 1200);
-    set('cfg-reddit-posts',       r.max_posts ?? 3);
-
     _teamTags = cfg.team_tags ?? {};
     renderTeamTags();
 
@@ -796,13 +789,6 @@ async function saveSettings() {
     },
     weather: {
       poll_interval_seconds: parseInt(get('cfg-weather-poll')),
-    },
-    reddit: {
-      subreddits:           get('cfg-reddit-subs').split(',').map(s => s.trim()).filter(Boolean),
-      min_score:            parseInt(get('cfg-reddit-score')),
-      max_age_hours:        parseInt(get('cfg-reddit-age')),
-      poll_interval_seconds: parseInt(get('cfg-reddit-poll')),
-      max_posts:            parseInt(get('cfg-reddit-posts')),
     },
     team_tags: _teamTags,
     valorant: {

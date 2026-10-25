@@ -73,15 +73,6 @@
       }
     ]
   },
-  "reddit": {
-    "subreddits": [
-      "ValorantCompetitive"
-    ],
-    "min_score": 300,
-    "max_age_hours": 24,
-    "poll_interval_seconds": 1200,
-    "max_posts": 3
-  },
   "team_tags": {
     "T1 Academy": "T1A",
     "Gen.G Global Academy": "GNA",
@@ -183,7 +174,6 @@
     "twitch_live",
     "countdown",
     "weather",
-    "reddit_valorant",
     "vlr_news",
     "wordofday",
     "pinned",
@@ -193,7 +183,6 @@
     "valorant_live": true,
     "valorant_recent": true,
     "weather": true,
-    "reddit_valorant": true,
     "vlr_news": true,
     "countdown": true,
     "wordofday": true,
