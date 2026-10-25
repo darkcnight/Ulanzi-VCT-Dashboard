@@ -3,6 +3,13 @@
   "weather": {
     "poll_interval_seconds": 300
   },
+  "watchdog": {
+    "enabled": true,
+    "check_interval_seconds": 10,
+    "freeze_seconds": 90,
+    "cooldown_minutes": 10,
+    "max_reboots_per_hour": 3
+  },
   "ha": {
     "weather_entity": "weather.singapore_weather",
     "rain_entity": "sensor.singapore_weather_rainfall_s228"

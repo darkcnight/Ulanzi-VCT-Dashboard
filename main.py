@@ -23,6 +23,7 @@ import wordofday
 import twitch_live
 import pinned
 import ha_events
+import watchdog
 from valorant_live import fetch_live, push_live
 from awtrix import AwtrixClient
 from scheduler import run_scheduler, reset_brightness_cache, apply_display_brightness
@@ -100,10 +101,16 @@ async def lifespan(app: FastAPI):
     sched_task = asyncio.create_task(run_scheduler(awtrix, _module_map, LIVE_EXEMPT))
     timer_task = asyncio.create_task(timer.run_timer_loop(awtrix))
     events_task = asyncio.create_task(ha_events.run_event_stream(awtrix))
+    watchdog_task = asyncio.create_task(watchdog.run_watchdog(awtrix))
     yield
+    watchdog_task.cancel()
     events_task.cancel()
     timer_task.cancel()
     sched_task.cancel()
+    try:
+        await watchdog_task
+    except asyncio.CancelledError:
+        pass
     try:
         await events_task
     except asyncio.CancelledError:

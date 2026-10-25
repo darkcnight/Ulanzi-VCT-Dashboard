@@ -35,6 +35,14 @@ class AwtrixClient:
         except Exception:
             return None
 
+    def get_screen(self) -> str | None:
+        """Fetch /api/screen (current frame as raw JSON text); None on failure."""
+        try:
+            resp = httpx.get(f"{self.base_url}/screen", timeout=3)
+            return resp.text if resp.status_code < 500 else None
+        except Exception:
+            return None
+
     def set_brightness(self, level: int) -> bool:
         """Set display brightness (0–255) via /api/settings. Disables device ABRI so our value takes effect. Returns True on success."""
         try:
