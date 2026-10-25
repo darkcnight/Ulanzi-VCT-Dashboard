@@ -22,10 +22,10 @@ class FakeAwtrix:
 
 
 def _light(state, brightness=None):
-    attrs = {"friendly_name": "Surya Bedroom Lights"}
+    attrs = {"friendly_name": "Surya Bedroom Downlights"}
     if brightness is not None:
         attrs["brightness"] = brightness
-    return {"entity_id": "light.surya_bedroom_lights", "state": state, "attributes": attrs}
+    return {"entity_id": "light.surya_bedroom_downlights", "state": state, "attributes": attrs}
 
 
 def _event(old, new):
@@ -68,4 +68,4 @@ def test_light_on_off_events_become_popups(monkeypatch, cfg):
     cfg["ha_events"] = EXAMPLE["ha_events"]
     events = [_event(_light("off"), _light("on", 255))]
     sent = asyncio.run(_run(events, cfg, monkeypatch))
-    assert [p["text"] for p in sent] == ["Lights ON"]
+    assert [p["text"] for p in sent] == ["Surya Bedroom Downlights ON"]

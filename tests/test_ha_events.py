@@ -280,3 +280,9 @@ def test_ws_url(monkeypatch):
     assert ha_events.ws_url() == "ws://192.168.18.186:8123/api/websocket"
     monkeypatch.setenv("HA_URL", "https://ha.example.com")
     assert ha_events.ws_url() == "wss://ha.example.com/api/websocket"
+
+
+def test_render_drops_trailing_zero_on_whole_floats():
+    new = {"state": "on", "attributes": {"percentage": 60.0, "temperature": 24.5}}
+    assert ha_events._render("{attr.percentage}% {attr.temperature}", new) == "60% 24.5"
+    assert ha_events._render("{value}", new, 25.0) == "25"

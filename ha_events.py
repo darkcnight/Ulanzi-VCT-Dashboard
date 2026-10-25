@@ -29,15 +29,20 @@ DEFAULT_COLOR = "#FFFFFF"
 _PLACEHOLDER = re.compile(r"\{(value|state|attr\.[A-Za-z0-9_]+)\}")
 
 
+def _fmt(v) -> str:
+    """HA reports whole numbers as floats (60.0); show them as 60."""
+    return str(int(v)) if isinstance(v, float) and v.is_integer() else str(v)
+
+
 def _render(text: str, new_state: dict, value=None) -> str:
     def sub(m: re.Match) -> str:
         key = m.group(1)
         if key == "value":
-            return str(value)
+            return _fmt(value)
         if key == "state":
             return str(new_state["state"])
         attr = new_state.get("attributes", {}).get(key[5:])
-        return "" if attr is None else str(attr)
+        return "" if attr is None else _fmt(attr)
 
     return _PLACEHOLDER.sub(sub, text).strip()
 

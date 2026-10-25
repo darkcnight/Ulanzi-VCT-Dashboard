@@ -19,21 +19,53 @@
     "during_live_match": true,
     "rules": [
       {
-        "name": "bedroom lights",
+        "name": "bedroom downlights",
         "type": "state",
-        "entity": "light.surya_bedroom_lights",
+        "entity": "light.surya_bedroom_downlights",
         "states": {
-          "on":  {"text": "Lights ON",  "color": "#FFD700"},
-          "off": {"text": "Lights OFF", "color": "#888888"}
+          "on": {
+            "text": "{attr.friendly_name} ON",
+            "color": "#FFD700"
+          },
+          "off": {
+            "text": "{attr.friendly_name} OFF",
+            "color": "#888888"
+          }
         }
       },
       {
-        "name": "bedroom light level",
+        "name": "bedroom led strip",
+        "type": "state",
+        "entity": "light.surya_bedroom_led_strip_01",
+        "states": {
+          "on": {
+            "text": "{attr.friendly_name} ON",
+            "color": "#FFD700"
+          },
+          "off": {
+            "text": "{attr.friendly_name} OFF",
+            "color": "#888888"
+          }
+        }
+      },
+      {
+        "name": "bedroom downlights level",
         "type": "value",
-        "entity": "light.surya_bedroom_lights",
+        "entity": "light.surya_bedroom_downlights",
         "attribute": "brightness",
         "scale": "percent255",
-        "text": "Lights {value}%",
+        "text": "{attr.friendly_name} {value}%",
+        "color": "#FFD700",
+        "settle_seconds": 1.5,
+        "suppress_while": "input_boolean.surya_sunrise_running"
+      },
+      {
+        "name": "bedroom led strip level",
+        "type": "value",
+        "entity": "light.surya_bedroom_led_strip_01",
+        "attribute": "brightness",
+        "scale": "percent255",
+        "text": "{attr.friendly_name} {value}%",
         "color": "#FFD700",
         "settle_seconds": 1.5,
         "suppress_while": "input_boolean.surya_sunrise_running"
@@ -50,11 +82,49 @@
         "type": "state",
         "entity": "climate.surya_bedroom_aircon",
         "states": {
-          "cool":     {"text": "AC cool {attr.temperature}", "color": "#4FC3F7"},
-          "dry":      {"text": "AC dry",                     "color": "#4FC3F7"},
-          "fan_only": {"text": "AC fan",                     "color": "#B0BEC5"},
-          "off":      {"text": "AC off",                     "color": "#888888"}
+          "cool": {
+            "text": "AC cool {attr.temperature} {attr.fan_mode}",
+            "color": "#4FC3F7"
+          },
+          "dry": {
+            "text": "AC dry {attr.fan_mode}",
+            "color": "#4FC3F7"
+          },
+          "heat": {
+            "text": "AC heat {attr.temperature} {attr.fan_mode}",
+            "color": "#FF7043"
+          },
+          "auto": {
+            "text": "AC auto {attr.temperature} {attr.fan_mode}",
+            "color": "#4FC3F7"
+          },
+          "fan_only": {
+            "text": "AC fan only {attr.fan_mode}",
+            "color": "#B0BEC5"
+          },
+          "off": {
+            "text": "AC off",
+            "color": "#888888"
+          }
         }
+      },
+      {
+        "name": "aircon fan speed",
+        "type": "value",
+        "entity": "climate.surya_bedroom_aircon",
+        "attribute": "fan_mode",
+        "text": "AC fan {value}",
+        "color": "#4FC3F7",
+        "settle_seconds": 1.5
+      },
+      {
+        "name": "aircon temperature",
+        "type": "value",
+        "entity": "climate.surya_bedroom_aircon",
+        "attribute": "temperature",
+        "text": "AC temp {value}",
+        "color": "#4FC3F7",
+        "settle_seconds": 1.5
       },
       {
         "name": "aircon sleep timer",
@@ -64,11 +134,65 @@
         "color": "#9C27B0"
       },
       {
+        "name": "study fan",
+        "type": "state",
+        "entity": "fan.study_fan",
+        "states": {
+          "on": {
+            "text": "{attr.friendly_name} ON {attr.percentage}%",
+            "color": "#80DEEA"
+          },
+          "off": {
+            "text": "{attr.friendly_name} OFF",
+            "color": "#888888"
+          }
+        }
+      },
+      {
+        "name": "study fan speed",
+        "type": "value",
+        "entity": "fan.study_fan",
+        "attribute": "percentage",
+        "text": "{attr.friendly_name} {value}%",
+        "color": "#80DEEA",
+        "settle_seconds": 1.5
+      },
+      {
+        "name": "front door person",
+        "type": "state",
+        "entity": "binary_sensor.front_door_person_occupancy",
+        "states": {
+          "on": {
+            "text": "Someone at the door",
+            "color": "#FF4655",
+            "duration": 8
+          }
+        },
+        "cooldown_seconds": 60
+      },
+      {
+        "name": "doorbell",
+        "type": "state",
+        "entity": "binary_sensor.front_door_visitor",
+        "states": {
+          "on": {
+            "text": "Doorbell",
+            "color": "#00E5FF",
+            "duration": 10
+          }
+        },
+        "cooldown_seconds": 5
+      },
+      {
         "name": "welcome home",
         "type": "state",
         "entity": "person.surya",
         "states": {
-          "home": {"text": "Welcome home Surya", "color": "#32FF24", "duration": 8}
+          "home": {
+            "text": "Welcome home Surya",
+            "color": "#32FF24",
+            "duration": 8
+          }
         }
       }
     ]
