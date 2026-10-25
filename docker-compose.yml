@@ -8,4 +8,6 @@ services:
     env_file:
       - path: .env
         required: false
+    environment:
+      - TZ=Asia/Singapore
     restart: unless-stopped

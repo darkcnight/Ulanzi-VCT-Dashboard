@@ -52,23 +52,37 @@ class Watchdog:
         return "reboot"
 
 
+def _num(cfg: dict, key: str, default: float, lo: float, hi: float) -> float:
+    """Read a numeric setting, falling back to `default` and clamping to [lo, hi]."""
+    try:
+        val = float(cfg.get(key, default))
+    except (TypeError, ValueError):
+        val = default
+    return max(lo, min(val, hi))
+
+
 async def run_watchdog(awtrix) -> None:
     cfg = state.cfg.get("watchdog", {})
     if not cfg.get("enabled", True):
         logger.info("[watchdog] disabled")
         return
-    interval = cfg.get("check_interval_seconds", 10)
+    interval = _num(cfg, "check_interval_seconds", 10, 5, 600)
     wd = Watchdog(
-        freeze_seconds=cfg.get("freeze_seconds", 90),
-        cooldown_seconds=cfg.get("cooldown_minutes", 10) * 60,
-        max_per_hour=cfg.get("max_reboots_per_hour", 3),
+        freeze_seconds=_num(cfg, "freeze_seconds", 90, 30, 3600),
+        cooldown_seconds=_num(cfg, "cooldown_minutes", 10, 1, 1440) * 60,
+        max_per_hour=int(_num(cfg, "max_reboots_per_hour", 3, 1, 6)),
     )
     logger.info(f"[watchdog] started (freeze={wd.freeze_seconds}s, interval={interval}s)")
     while True:
         await asyncio.sleep(interval)
-        frame = await asyncio.to_thread(awtrix.get_screen)
-        if wd.step(frame) == "reboot":
-            ok = await asyncio.to_thread(awtrix.reboot)
-            logger.warning(f"[watchdog] display frozen for {wd.freeze_seconds}s — reboot "
-                           f"{'sent' if ok else 'FAILED'}")
-            state.last_auto_reboot = time.strftime("%H:%M:%S")
+        try:
+            frame = await asyncio.to_thread(awtrix.get_screen)
+            if wd.step(frame) == "reboot":
+                ok = await asyncio.to_thread(awtrix.reboot)
+                logger.warning(f"[watchdog] display frozen for {wd.freeze_seconds}s — reboot "
+                               f"{'sent' if ok else 'FAILED'}")
+                state.last_auto_reboot = time.strftime("%H:%M:%S")
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("[watchdog] tick failed")

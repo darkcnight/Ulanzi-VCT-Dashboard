@@ -67,3 +67,11 @@ def test_hourly_cap():
     clock.t += 4000
     wd.step("a")
     assert run(wd, clock, "a", 100) == ["reboot"]  # old reboots aged out
+
+
+def test_num_clamps_and_tolerates_bad_values():
+    assert watchdog._num({}, "x", 10, 5, 600) == 10
+    assert watchdog._num({"x": 0}, "x", 10, 5, 600) == 5
+    assert watchdog._num({"x": 99999}, "x", 10, 5, 600) == 600
+    assert watchdog._num({"x": "abc"}, "x", 10, 5, 600) == 10
+    assert watchdog._num({"x": None}, "x", 10, 5, 600) == 10

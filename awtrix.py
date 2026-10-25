@@ -39,7 +39,9 @@ class AwtrixClient:
         """Fetch /api/screen (current frame as raw JSON text); None on failure."""
         try:
             resp = httpx.get(f"{self.base_url}/screen", timeout=3)
-            return resp.text if resp.status_code < 500 else None
+            if resp.status_code != 200 or not isinstance(resp.json(), list):
+                return None      # error page / auth challenge ≠ a frame
+            return resp.text
         except Exception:
             return None
 
