@@ -3,6 +3,8 @@ services:
     image: ulanzi-clock:2026-03-22
     pull_policy: never
     restart: unless-stopped
+    environment:
+      - TZ=Asia/Singapore
     ports:
       - "18000:8000"
     volumes:
