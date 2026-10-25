@@ -145,6 +145,19 @@ def _check_pre_match(upcoming: list[dict], current_mode: str) -> str:
     return "IDLE"
 
 
+_clear_task: asyncio.Task | None = None
+_BUILTIN_APP_NAMES = {"TIM": "Time", "DAT": "Date", "TEMP": "Temp", "HUM": "Hum", "BAT": "Bat"}
+
+
+async def _clear_builtins_delayed(awtrix, built_in: dict) -> None:
+    """After a device reboot the clock re-adds its disabled built-in apps; delete them again."""
+    for delay in (2, 5, 10, 20):
+        await asyncio.sleep(delay)
+        for key, enabled in built_in.items():
+            if not enabled and key in _BUILTIN_APP_NAMES:
+                await asyncio.to_thread(awtrix.delete_app, _BUILTIN_APP_NAMES[key])
+
+
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
 async def run_scheduler(awtrix, module_map: dict, live_exempt: set) -> None:
@@ -187,14 +200,9 @@ async def run_scheduler(awtrix, module_map: dict, live_exempt: set) -> None:
                     built_in = state.cfg.get("built_in_apps", {})
                     awtrix.update_settings(built_in)
                     
-                    async def clear_builtins_delayed():
-                        app_map = {"TIM": "Time", "DAT": "Date", "TEMP": "Temp", "HUM": "Hum", "BAT": "Bat"}
-                        for delay in (2, 5, 10, 20):
-                            await asyncio.sleep(delay)
-                            for k, v in built_in.items():
-                                if not v and k in app_map:
-                                    awtrix.delete_app(app_map[k])
-                    asyncio.create_task(clear_builtins_delayed())
+                    global _clear_task
+                    if _clear_task is None or _clear_task.done():
+                        _clear_task = asyncio.create_task(_clear_builtins_delayed(awtrix, built_in))
 
                     for name, mod in module_map.items():
                         if name not in live_exempt and hasattr(mod, "restore"):
